@@ -39,7 +39,12 @@ func (txm *TxManager) CreateTx(to common.Address, data []byte) (*models.Tx, erro
 
 	var tx *models.Tx
 	txm.activeAccount.GetAndIncrementNonce(func(nonce uint64) error {
-		tx, err = txm.orm.CreateTx(
+		nestableORM, err := txm.orm.StartNestableTransaction()
+		if err != nil {
+			return err
+		}
+		defer nestableORM.RealRollback()
+		tx, err = nestableORM.CreateTx(
 			txm.activeAccount.Address,
 			nonce,
 			to,
@@ -52,16 +57,17 @@ func (txm *TxManager) CreateTx(to common.Address, data []byte) (*models.Tx, erro
 		}
 
 		gasPrice := txm.config.EthGasPriceDefault
-		var txa *models.TxAttempt
-		txa, err = txm.createAttempt(tx, &gasPrice, blkNum)
+		// var txa *models.TxAttempt
+		_, err = txm.createAttempt(nestableORM, tx, &gasPrice, blkNum)
 		if err != nil {
-			txm.orm.DeleteStruct(tx)
-			txm.orm.DeleteStruct(txa)
+			// txm.orm.DeleteStruct(tx)
+			// txm.orm.DeleteStruct(txa)
+			// nestableORM.Rollback()
 
 			return err
 		}
 
-		return nil
+		return nestableORM.RealCommit()
 	})
 
 	return tx, err
@@ -95,7 +101,12 @@ func (txm *TxManager) MeetsMinConfirmations(hash common.Hash) (bool, error) {
 	return false, nil
 }
 
+type AddAttempter interface {
+	AddAttempt(*models.Tx, *types.Transaction, uint64) (*models.TxAttempt, error)
+}
+
 func (txm *TxManager) createAttempt(
+	addAttempter AddAttempter, // either ORM or NestableORM
 	tx *models.Tx,
 	gasPrice *big.Int,
 	blkNum uint64,
@@ -106,7 +117,7 @@ func (txm *TxManager) createAttempt(
 		return nil, err
 	}
 
-	a, err = txm.orm.AddAttempt(tx, etx, blkNum)
+	a, err = addAttempter.AddAttempt(tx, etx, blkNum)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +210,7 @@ func (txm *TxManager) bumpGas(txat *models.TxAttempt, blkNum uint64) error {
 		return err
 	}
 	gasPrice := new(big.Int).Add(txat.GasPrice, &txm.config.EthGasBumpWei)
-	txat, err := txm.createAttempt(tx, gasPrice, blkNum)
+	txat, err := txm.createAttempt(txm.orm, tx, gasPrice, blkNum)
 	logger.Infow(fmt.Sprintf("Bumping gas to %v for transaction %v", gasPrice, txat.Hash.String()), "txat", txat)
 	return err
 }
@@ -210,8 +221,10 @@ func (txm *TxManager) GetActiveAccount() *ActiveAccount {
 	if txm.activeAccount == nil {
 		return nil
 	}
-	dup := *txm.activeAccount
-	return &dup
+	var dup *ActiveAccount
+	dup = txm.activeAccount.Clone()
+
+	return dup
 }
 
 // ActivateAccount retrieves an account's nonce from the blockchain for client
@@ -232,6 +245,10 @@ type ActiveAccount struct {
 	accounts.Account
 	nonce uint64
 	mutex sync.Mutex
+}
+
+func (a *ActiveAccount) Clone() *ActiveAccount {
+	return &ActiveAccount{Account: a.Account, nonce: a.nonce}
 }
 
 // GetNonce returns the client side managed nonce.

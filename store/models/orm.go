@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"log"
 	"math/big"
 	"reflect"
@@ -94,6 +95,7 @@ func (orm *ORM) JobRunsFor(jobID string) ([]JobRun, error) {
 
 // SaveJob saves a job to the database and adds IDs to associated tables.
 func (orm *ORM) SaveJob(job *JobSpec) error {
+	fmt.Println("***** ORM#SaveJob")
 	tx, err := orm.Begin(true)
 	if err != nil {
 		return err
@@ -158,6 +160,7 @@ func (orm *ORM) CreateTx(
 // ConfirmTx updates the database for the given transaction to
 // show that the transaction has been confirmed on the blockchain.
 func (orm *ORM) ConfirmTx(tx *Tx, txat *TxAttempt) error {
+	fmt.Println("***** ORM#ConfirmTx")
 	dbtx, err := orm.Begin(true)
 	if err != nil {
 		return err
@@ -206,11 +209,11 @@ func (orm *ORM) AddAttempt(
 	if !tx.Confirmed {
 		tx.TxAttempt = *attempt
 	}
-	dbtx, err := orm.Begin(true)
+	dbtx, err := orm.StartTransaction()
 	if err != nil {
 		return nil, err
 	}
-	defer dbtx.Rollback()
+	defer dbtx.Rollback() // becomes noop
 	if err = dbtx.Save(tx); err != nil {
 		return nil, err
 	}
@@ -239,3 +242,65 @@ func (e *DatabaseAccessError) Error() string { return e.msg }
 func NewDatabaseAccessError(msg string) error {
 	return &DatabaseAccessError{msg}
 }
+
+type Transactionable interface {
+	StartTransaction() (Transactionable, error)
+	Rollback() error
+	Save(interface{}) error
+	Commit() error
+}
+
+type transactionableWrapper struct {
+	storm.Node
+}
+
+func (tw transactionableWrapper) StartTransaction() (Transactionable, error) {
+	fmt.Println("***** transactionableWrapper#StartTransaction")
+	node, err := tw.Node.Begin(true)
+	return transactionableWrapper{node}, err
+}
+
+func (orm *ORM) StartTransaction() (Transactionable, error) {
+	fmt.Println("***** ORM#StartTransaction")
+	node, err := orm.Begin(true)
+	return transactionableWrapper{node}, err
+}
+
+func (orm *ORM) StartNestableTransaction() (NestableORM, error) {
+	fmt.Println("***** ORM#StartNestableTransaction")
+	dbtx, err := orm.Begin(true)
+	return NestableORM{orm, dbtx}, err
+}
+
+// NestableORM wraps an ORM with a stateful db transaction that no ops
+// all Rollback, Commit calls. NOT THREAD SAFE.
+type NestableORM struct {
+	*ORM
+	dbtx storm.Node
+}
+
+func (norm NestableORM) StartTransaction() (Transactionable, error) {
+	return norm, nil
+}
+func (norm NestableORM) Rollback() error { return nil }
+func (norm NestableORM) Commit() error   { return nil }
+func (norm NestableORM) Save(v interface{}) error {
+	return norm.dbtx.Save(v)
+}
+
+func (norm NestableORM) RealRollback()     { norm.dbtx.Rollback() }
+func (norm NestableORM) RealCommit() error { return norm.dbtx.Commit() }
+
+// dbtx, err := orm.Begin(true) // this orm can either ORM or NestableORM
+// if err != nil {
+// 	return nil, err
+// }
+// defer dbtx.Rollback()
+// if err = dbtx.Save(tx); err != nil {
+// 	return nil, err
+// }
+// if err = dbtx.Save(attempt); err != nil {
+// 	return nil, err
+// }
+
+// return attempt, dbtx.Commit()

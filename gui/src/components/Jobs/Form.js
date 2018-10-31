@@ -32,7 +32,7 @@ const Form = ({
   submitCount
 }) => {
   return (
-    <React.Fragment>
+    <>
       <Prompt
         when={values.json !== '' && submitCount === 0}
         message='You have not submitted the form, are you sure you want to leave?'
@@ -67,7 +67,7 @@ const Form = ({
           </Button>
         </Grid>
       </formik.Form>
-    </React.Fragment>
+    </>
   )
 }
 

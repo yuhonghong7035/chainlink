@@ -33,7 +33,7 @@ const isDirty = ({values, name, url, minimumContractPayment, confirmations, subm
 }
 
 const Form = props => (
-  <React.Fragment>
+  <>
     <Prompt
       when={isDirty(props)}
       message='You have not submitted the form, are you sure you want to leave?'
@@ -106,7 +106,7 @@ const Form = props => (
         </Grid>
       </Grid>
     </formik.Form>
-  </React.Fragment>
+  </>
 )
 
 Form.defaultPropTypes = {

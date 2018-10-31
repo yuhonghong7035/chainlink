@@ -138,7 +138,7 @@ const renderJobSpec = ({ classes, jobSpec, jobRunsCount, submitJobSpecRun, fetch
 }
 
 const renderLatestRuns = ({ jobSpecId, classes, latestJobRuns, jobRunsCount }) => (
-  <React.Fragment>
+  <>
     <Typography variant='title' className={classes.lastRun}>
       Last Run
     </Typography>
@@ -151,7 +151,7 @@ const renderLatestRuns = ({ jobSpecId, classes, latestJobRuns, jobRunsCount }) =
         Show More
       </Link>
     )}
-  </React.Fragment>
+  </>
 )
 
 const renderFetching = () => <div>Fetching...</div>
@@ -159,10 +159,10 @@ const renderFetching = () => <div>Fetching...</div>
 const renderDetails = props => {
   if (props.jobSpec) {
     return (
-      <React.Fragment>
+      <>
         {renderJobSpec(props)}
         {renderLatestRuns(props)}
-      </React.Fragment>
+      </>
     )
   } else {
     return renderFetching()

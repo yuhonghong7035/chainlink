@@ -9,7 +9,7 @@ export class SignOut extends Component {
   }
 
   render () {
-    return <React.Fragment />
+    return </>
   }
 }
 

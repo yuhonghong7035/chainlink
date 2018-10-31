@@ -24,12 +24,12 @@ const styles = theme => ({
   }
 })
 
-const successNotification = ({name}) => (<React.Fragment>
+const successNotification = ({name}) => (<>
   Successfully updated <Link to={`/bridges/${name}`}>{name}</Link>
-</React.Fragment>)
+</>)
 
 const errorNotification = ({name}) => (
-  <React.Fragment>Error updating {name}</React.Fragment>
+  <>Error updating {name}</>
 )
 
 export class Edit extends Component {

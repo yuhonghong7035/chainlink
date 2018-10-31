@@ -18,16 +18,16 @@ const styles = theme => ({
   }
 })
 
-const successNotification = ({name}) => (<React.Fragment>
+const successNotification = ({name}) => (<>
   Successfully created <Link to={`/bridges/${name}`}>{name}</Link>
-</React.Fragment>)
+</>)
 
 const errorNotification = ({name}) => (
-  <React.Fragment>Error creating {name}</React.Fragment>
+  <>Error creating {name}</>
 )
 
 const New = props => (
-  <React.Fragment>
+  <>
     <Breadcrumb className={props.classes.breadcrumb}>
       <BreadcrumbItem href='/'>Dashboard</BreadcrumbItem>
       <BreadcrumbItem>></BreadcrumbItem>
@@ -49,7 +49,7 @@ const New = props => (
         </PaddedCard>
       </Grid>
     </Grid>
-  </React.Fragment>
+  </>
 )
 
 export const ConnectedNew = connect(

@@ -8,7 +8,7 @@ import { withRouteData } from 'react-static'
 import { connect } from 'react-redux'
 
 const About = ({classes, version, sha}) => (
-  <React.Fragment>
+  <>
     <Title>About</Title>
 
     <Grid container spacing={40}>
@@ -25,7 +25,7 @@ const About = ({classes, version, sha}) => (
         </PaddedCard>
       </Grid>
     </Grid>
-  </React.Fragment>
+  </>
 )
 
 export const ConnectedAbout = connect(

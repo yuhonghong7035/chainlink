@@ -8,8 +8,8 @@ import Typography from '@material-ui/core/Typography'
 import TableRow from '@material-ui/core/TableRow'
 import TableCell from '@material-ui/core/TableCell'
 import Card from '@material-ui/core/Card'
-import Link from 'components/Link'
-import TimeAgo from 'components/TimeAgo'
+import Link from '../Link'
+import TimeAgo from '../TimeAgo'
 
 const styles = () => ({
   jobRunsCard: {

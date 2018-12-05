@@ -15,6 +15,7 @@ extern crate serde_json;
 #[cfg(not(target_env = "sgx"))]
 #[macro_use]
 extern crate sgx_tstd as std;
+extern crate sgx_tse as tse;
 extern crate sgx_types;
 #[macro_use]
 extern crate utils;
@@ -137,5 +138,48 @@ fn multiply_shim(
 
     let rr_json = serde_json::to_string(&result)?;
     copy_string_to_cstr_ptr(&rr_json, result_ptr, result_capacity, result_len)?;
+    Ok(())
+}
+
+#[no_mangle]
+pub extern "C" fn sgx_quote(
+    input_str_ptr: *const u8,
+    input_str_len: usize,
+    result_ptr: *mut u8,
+    result_capacity: usize,
+    result_len: *mut usize,
+) -> sgx_status_t {
+    match quote_shim(
+        input_str_ptr,
+        input_str_len,
+        result_ptr,
+        result_capacity,
+        result_len,
+    ) {
+        Ok(_) => sgx_status_t::SGX_SUCCESS,
+        _ => sgx_status_t::SGX_ERROR_UNEXPECTED,
+    }
+}
+
+fn quote_shim(
+    input_str_ptr: *const u8,
+    input_str_len: usize,
+    result_ptr: *mut u8,
+    result_capacity: usize,
+    result_len: *mut usize,
+) -> Result<(), ShimError> {
+    let input_str = string_from_cstr_with_len(input_str_ptr, input_str_len)?;
+
+    let target_info = sgx_target_info_t::default();
+    let report_data = sgx_report_data_t::default();
+
+    let result = tse::rsgx_create_report(&target_info, &report_data);
+
+    let output = match result {
+        Ok(report) => format!("report {:x?} {:x?}", report.key_id.id, report.mac),
+        Err(err) => format!("error: {:?}", err),
+    };
+    println!("output {:?}", output);
+    copy_string_to_cstr_ptr(&output, result_ptr, result_capacity, result_len)?;
     Ok(())
 }

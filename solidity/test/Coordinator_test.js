@@ -89,7 +89,10 @@ contract('Coordinator', () => {
   })
 
   describe('#initiateServiceAgreement', () => {
-    const agreement = newServiceAgreement({oracles: [oracleNode]})
+    let agreement
+    before(async () => {
+      agreement = newServiceAgreement({oracles: [oracleNode]})
+    })
 
     context('with valid oracle signatures', () => {
       it('saves a service agreement struct from the parameters', async () => {
@@ -110,10 +113,14 @@ contract('Coordinator', () => {
     })
 
     context('with an invalid oracle signatures', () => {
-      const badOracleSignature =
-        personalSign(newAddress(stranger), agreement.id)
-      const badRequestDigestAddr = recoverPersonalSignature(agreement.id, badOracleSignature)
-      assert.notEqual(toHex(newAddress(oracleNode)), toHex(badRequestDigestAddr))
+      let badOracleSignature, badRequestDigestAddr
+      before(async () => {
+        badOracleSignature = personalSign(newAddress(stranger), agreement.id)
+        badRequestDigestAddr = recoverPersonalSignature(agreement.id,
+                                                        badOracleSignature)
+        assert.notEqual(toHex(newAddress(oracleNode)),
+                        toHex(badRequestDigestAddr))
+      })
 
       it('saves no service agreement struct, if signatures invalid', async () => {
         await assertActionThrows(
@@ -137,21 +144,21 @@ contract('Coordinator', () => {
   describe('#requestData', () => {
     const fHash = functionSelector('requestedBytes32(bytes32,bytes32)')
     const to = '0x80e29acb842498fe6591f020bd82766dce619d43'
-    const agreement = newServiceAgreement({oracles: [oracleNode]})
+    let agreement
+    before(() => { agreement = newServiceAgreement({oracles: [oracleNode]}) })
 
     beforeEach(async () => {
       await initiateServiceAgreement(coordinator, agreement)
       await link.transfer(consumer, toWei(1000))
     })
 
-    context('when called through the LINK token with enough payment', () => {
-      const payload = executeServiceAgreementBytes(agreement.id, to, fHash, '1', '')
-      let tx
-
+    context('when called through the LINK token with enough payment', () => {      
+      let payload, tx
       beforeEach(async () => {
-        tx = await link.transferAndCall(coordinator.address, agreement.payment, payload, {
-          from: consumer
-        })
+        const payload = executeServiceAgreementBytes(
+          agreement.id, to, fHash, '1', '')
+        tx = await link.transferAndCall(coordinator.address, agreement.payment,
+                                        payload, { from: consumer })
       })
 
       it('logs an event', async () => {
@@ -192,12 +199,18 @@ contract('Coordinator', () => {
   })
 
   describe('#fulfillData', () => {
-    const agreement = newServiceAgreement({oracles: [oracleNode]})
-
-    let mock, requestId
-
+    const externalId = '17'
+    let agreement, mock, requestId
     beforeEach(async () => {
+      agreement = newServiceAgreement({oracles: [oracleNode]})
       const tx = await initiateServiceAgreement(coordinator, agreement)
+      assert.equal(tx.logs[0].args.said, agreement.id)
+
+      mock = await deploy('examples/GetterSetter.sol')
+      const fHash = functionSelector('requestedBytes32(bytes32,bytes32)')
+
+      const tx = await initiateServiceAgreement(coordinator, agreement)
+      requestId = runRequestId(tx.receipt.logs[2])
       assert.equal(tx.logs[0].args.said, agreement.id)
     })
     
@@ -219,9 +232,10 @@ contract('Coordinator', () => {
       })
 
       context('when called by an owner', () => {
-        it('raises an error if the request ID does not exist', async () => {
+        it.skip('raises an error if the request ID does not exist', async () => {
           await assertActionThrows(async () => {
-            await coordinator.fulfillData(0xdeadbeef, 'Hello World!', { from: oracleNode })
+            await coordinator.fulfillData(
+              0xdeadbeef, 'Hello World!', { from: oracleNode })
           })
         })
 

@@ -15,7 +15,7 @@ const ethjsUtils = require('ethereumjs-util')
 
 const HEX_BASE = 16
 
-export const eth = web3.eth
+export const eth = web3.eth;
 
 // Default hard coded truffle accounts:
 // ==================
@@ -47,19 +47,24 @@ export const eth = web3.eth
 // ==================
 // Mnemonic:      candy maple cake sugar pudding cream honey rich smooth crumble sweet treat
 // Base HD Path:  m/44'/60'/0'/0/{account_index}
-const accounts = eth.accounts
 
-export const defaultAccount = accounts[0]
-export const oracleNode = accounts[1]
-export const stranger = accounts[2]
-export const consumer = accounts[3]
+
+export let accounts, defaultAccount, oracleNode, stranger, consumer
+(() => {
+  before(async function () {
+    accounts = (await eth.getAccounts());
+    [defaultAccount, oracleNode, stranger, consumer] = accounts.slice(0, 4)
+    console.log([defaultAccount, oracleNode, stranger, consumer])
+  })
+})()
+
 export const utils = Utils(web3.currentProvider)
 export const wallet = Wallet(PRIVATE_KEY, utils)
 export const deployer = Deployer(wallet, utils)
 
-export const bigNum = number => web3.toBigNumber(number)
+export const bigNum = number => web3.utils.toBN(number)
 
-export const toWei = number => bigNum(web3.toWei(number))
+export const toWei = number => bigNum(web3.utils.toWei(bigNum(number)))
 
 export const hexToInt = string => web3.toBigNumber(string)
 
@@ -98,7 +103,8 @@ export const requestDataFrom = (oc, link, amount, args, options) => {
   return link.transferAndCall(oc.address, amount, args, options)
 }
 
-export const functionSelector = signature => '0x' + web3.sha3(signature).slice(2).slice(0, 8)
+export const functionSelector = signature =>
+  '0x' + web3.utils.sha3(signature).slice(2).slice(0, 8)
 
 export const assertActionThrows = action => (
   Promise

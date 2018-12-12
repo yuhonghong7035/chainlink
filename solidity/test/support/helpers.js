@@ -15,48 +15,24 @@ const ethjsUtils = require('ethereumjs-util')
 
 const HEX_BASE = 16
 
+// https://github.com/ethereum/web3.js/issues/1119#issuecomment-394217563
+web3.providers.HttpProvider.prototype.sendAsync =
+  web3.providers.HttpProvider.prototype.send
 export const eth = web3.eth;
 
-// Default hard coded truffle accounts:
-// ==================
-// (0) 0x627306090abab3a6e1400e9345bc60c78a8bef57
-// (1) 0xf17f52151ebef6c7334fad080c5704d77216b732
-// (2) 0xc5fdf4076b8f3a5357c5e395ab970b5b54098fef
-// (3) 0x821aea9a577a9b44299b9c15c88cf3087f3b5544
-// (4) 0x0d1d4e623d10f9fba5db95830f7d3839406c6af2
-// (5) 0x2932b7a2355d6fecc4b5c0b6bd44cc31df247a2e
-// (6) 0x2191ef87e392377ec08e7c08eb105ef5448eced5
-// (7) 0x0f4f2ac550a1b4e2280d04c21cea7ebd822934b5
-// (8) 0x6330a553fc93768f612722bb8c2ec78ac90b3bbc
-// (9) 0x5aeda56215b167893e80b4fe645ba6d5bab767de
-
-// Private Keys
-// ==================
-// (0) c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3
-// (1) ae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f
-// (2) 0dbbe8e4ae425a6d2687f1a7e3ba17bc98c673636790f1b8ad91193c05875ef1
-// (3) c88b703fb08cbea894b6aeff5a544fb92e78a18e19814cd85da83b71f772aa6c
-// (4) 388c684f0ba1ef5017716adb5d21a053ea8e90277d0868337519f97bede61418
-// (5) 659cbb0e2411a44db63778987b1e22153c086a95eb6b18bdf89de078917abc63
-// (6) 82d052c865f5763aad42add438569276c00d3d88a2d062d36b2bae914d58b8c8
-// (7) aa3680d5d48a8283413f7a108367c7299ca73f553735860a87b08f39395618b7
-// (8) 0f62d96d6675f32685bbdb8ac13cda7c23436f63efbb9d07700d8669ff12b7c4
-// (9) 8d5366123cb560bb606379f90a0bfd4769eecc0557f1b362dcae9012b548b1e5
-
-// HD Wallet
-// ==================
-// Mnemonic:      candy maple cake sugar pudding cream honey rich smooth crumble sweet treat
-// Base HD Path:  m/44'/60'/0'/0/{account_index}
-
-
-export let accounts, defaultAccount, oracleNode, stranger, consumer
-(() => {
-  before(async function () {
+const INVALIDVALUE = {
+  // If you got this value, you probably tried to use one of the variables below
+  // before they were initialized. Do any test initialization which requires
+  // them in a callback passed to Mocha's `before` or `beforeEach`.
+  // https://mochajs.org/#asynchronous-hooks
+  unitializedValueProbablyShouldUseVaribleInMochaBeforeCallback: null
+}
+export let [accounts, defaultAccount, oracleNode, stranger, consumer] =
+  Array(1000).fill(INVALIDVALUE)
+before(async function queryEthClientForConstants () {
     accounts = (await eth.getAccounts());
     [defaultAccount, oracleNode, stranger, consumer] = accounts.slice(0, 4)
-    console.log([defaultAccount, oracleNode, stranger, consumer])
   })
-})()
 
 export const utils = Utils(web3.currentProvider)
 export const wallet = Wallet(PRIVATE_KEY, utils)
@@ -273,6 +249,7 @@ export const recoverPersonalSignature = (message, signature) => {
     message
   )
   const digest = ethjsUtils.sha3(toBuffer(personalSignMessage))
+  console.log('signature', signature)
   const requestDigestPubKey = ethjsUtils.ecrecover(digest,
     signature.v,
     toBuffer(signature.r),
@@ -281,11 +258,11 @@ export const recoverPersonalSignature = (message, signature) => {
   return ethjsUtils.pubToAddress(requestDigestPubKey)
 }
 
-export const personalSign = (account, message) => {
-  return newSignature(web3.eth.sign(
-    toHexWithoutPrefix(account),
-    toHexWithoutPrefix(message))
-  )
+export const personalSign = async (account, message) => {
+  console.log('message', message)
+  console.log('account', account)
+  return newSignature(await web3.eth.sign(web3.utils.utf8ToHex(message),
+                                          account))
 }
 
 export const executeServiceAgreementBytes = (sAID, to, fHash, nonce, data) => {
@@ -365,24 +342,27 @@ export const checkServiceAgreementAbsent = async (coordinator, serviceAgreementI
     sa[3], '0x0000000000000000000000000000000000000000000000000000000000000000')
 }
 
-export const newServiceAgreement = (params) => {
+export const newServiceAgreement = async (params) => {
   const agreement = {}
   params = params || {}
   agreement.payment = params.payment || 1000000000000000000
   agreement.expiration = params.expiration || 300
   agreement.endAt = params.endAt || sixMonthsFromNow()
   agreement.oracles = params.oracles || [oracleNode]
-  agreement.requestDigest = params.requestDigest || newHash('0xbadc0de5badc0de5badc0de5badc0de5badc0de5badc0de5badc0de5badc0de5')
+  agreement.requestDigest = params.requestDigest ||
+    newHash('0xbadc0de5badc0de5badc0de5badc0de5badc0de5badc0de5badc0de5badc0de5')
 
   const sAID = calculateSAID(agreement)
   agreement.id = toHex(sAID)
 
   const oracle = newAddress(agreement.oracles[0])
-  const oracleSignature = personalSign(oracle, sAID)
+  const oracleSignature = await personalSign(oracle, sAID)
+  console.log('oracleSignature', oracleSignature)
   const requestDigestAddr = recoverPersonalSignature(sAID, oracleSignature)
   assert.equal(toHex(oracle), toHex(requestDigestAddr))
   agreement.oracleSignature = oracleSignature
 
+  console.log('extiing newServiceAgreement')
   return agreement
 }
 

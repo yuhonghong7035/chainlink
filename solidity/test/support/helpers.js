@@ -13,7 +13,7 @@ process.env.SOLIDITY_INCLUDE = [
   'node_modules/@ensdomains/ens/contracts/',
 ].map(p => join(contractPathHead, p)).join(':')
 
-const PRIVATE_KEY = 'c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3'
+const PRIVATE_KEY = '8d5366123cb560bb606379f90a0bfd4769eecc0557f1b362dcae9012b548b1e5' // key #9 
 
 const Wallet = require('../../app/wallet.js')
 const Utils = require('../../app/utils.js')
@@ -69,6 +69,11 @@ export const toHex = value => {
   return `0x${toHexWithoutPrefix(value)}`
 }
 
+// True if h is a standard representation of a byte array, false otherwise
+export const isByteRepresentation = h => {
+  return (h instanceof Buffer || h instanceof BN || h instanceof Uint8Array )
+}
+
 export const deploy = (filePath, ...args) => deployer.perform(filePath, ...args)
 
 export const getEvents = contract => (
@@ -106,7 +111,7 @@ export const assertActionThrows = action => (
       assert(errorMessage, 'Expected an error to be raised')
       const invalidOpcode = errorMessage.includes('invalid opcode')
       const reverted = errorMessage.includes('VM Exception while processing transaction: revert')
-      assert.isTrue(invalidOpcode || reverted, 'expected error message to include "invalid JUMP" or "revert"')
+      assert.isTrue(invalidOpcode || reverted, `expected following error message to include "invalid JUMP" or "revert": "${errorMessage}"`)
       // see https://github.com/ethereumjs/testrpc/issues/39
       // for why the "invalid JUMP" is the throw related error when using TestRPC
     })
@@ -260,7 +265,6 @@ export const recoverPersonalSignature = (message, signature) => {
     message
   )
   const digest = ethjsUtils.sha3(toBuffer(personalSignMessage))
-  console.log('signature', signature)
   const requestDigestPubKey = ethjsUtils.ecrecover(digest,
     signature.v,
     toBuffer(signature.r),
@@ -270,21 +274,11 @@ export const recoverPersonalSignature = (message, signature) => {
 }
 
 export const personalSign = async (account, message) => {
-  console.log('message', message)
-  console.log('account', account)
-  return newSignature(await web3.eth.sign(web3.utils.utf8ToHex(message),
-                                          account))
+  if (!isByteRepresentation(message)) {
+    throw new Error(`Message ${message} is not a recognized representation of a byte array. (Can be Buffer, BigNumber, Uint8Array, 0x-prepended hexadecimal string.)`)
+  }
+  return newSignature(await web3.eth.sign(toHex(message), account))
 }
-
-describe("personalSign / recoverPersonalSignature", () => {
-  it('should recover the address of a signed message', async () => {
-    const account = newAddress(oracleNode)
-    const messageHash = newHash(toHex("slartibartfast"))
-    const signature = await personalSign(account, messageHash)
-    const recoveredAddress = recoverPersonalSignature(messageHash, signature)
-    assert.equal(toHex(recoveredAddress), toHex(account))
-  })
-})
 
 export const executeServiceAgreementBytes = (sAID, to, fHash, runId, data) => {
   let types = ['address', 'uint256', 'uint256', 'bytes32', 'address', 'bytes4', 'bytes32', 'bytes']
@@ -376,14 +370,11 @@ export const newServiceAgreement = async (params) => {
   const sAID = calculateSAID(agreement)
   agreement.id = toHex(sAID)
 
-  const oracle = newAddress(agreement.oracles[0])
+  const oracle = agreement.oracles[0]
   const oracleSignature = await personalSign(oracle, sAID)
-  console.log('oracleSignature', oracleSignature)
   const requestDigestAddr = recoverPersonalSignature(sAID, oracleSignature)
-  assert.equal(toHex(oracle), toHex(requestDigestAddr))
+  assert.equal(oracle.toLowerCase(), toHex(requestDigestAddr))
   agreement.oracleSignature = oracleSignature
-
-  console.log('extiing newServiceAgreement')
   return agreement
 }
 

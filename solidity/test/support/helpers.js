@@ -106,7 +106,7 @@ export const getLatestEvent = async (contract) => {
 
 export const requestDataFrom = (oc, link, amount, args, options) => {
   if (!options) options = {}
-  return link.transferAndCall(oc.address, amount, args, options)
+  return transferLINKAndCall(link, oc.address, amount, args, options)
 }
 
 export const functionSelector = signature =>

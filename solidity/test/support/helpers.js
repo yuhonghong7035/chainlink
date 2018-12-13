@@ -13,7 +13,8 @@ process.env.SOLIDITY_INCLUDE = [
   'node_modules/@ensdomains/ens/contracts/',
 ].map(p => join(contractPathHead, p)).join(':')
 
-const PRIVATE_KEY = '8d5366123cb560bb606379f90a0bfd4769eecc0557f1b362dcae9012b548b1e5' // key #9 
+// Key for defaultAccount, defined below.
+const PRIVATE_KEY = 'c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3'
 
 const Wallet = require('../../app/wallet.js')
 const Utils = require('../../app/utils.js')

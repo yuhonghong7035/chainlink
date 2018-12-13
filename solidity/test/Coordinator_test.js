@@ -263,9 +263,9 @@ contract('Coordinator', () => {
     })
 
     context('with a malicious requester', () => {
-      const paymentAmount = toWei(1).toString()
+      const paymentAmount = toWei(1)
 
-      it('cannot cancel before the expiration', async () => {
+      it.only('cannot cancel before the expiration', async () => {
         mock = await deploy(
           'examples/MaliciousRequester.sol', link.address, coordinator.address)
         await link.transfer(mock.address, paymentAmount)

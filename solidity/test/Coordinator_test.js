@@ -1,5 +1,6 @@
 import {
   abiEncode,
+  accessSolidityContractTransferMethod,
   assertActionThrows,
   bigNum,
   consumer,
@@ -265,7 +266,9 @@ contract('Coordinator', () => {
       it.only('cannot cancel before the expiration', async () => {
         mock = await deploy(
           'examples/MaliciousRequester.sol', link.address, coordinator.address)
-        console.log('paymentAmount', paymentAmount, 'address', mock.address)
+        console.log('link', link.contract, 'paymentAmount', paymentAmount, 'address', mock.address)
+        // await accessSolidityContractTransferMethod(
+        //   link, mock.address, paymentAmount)
         await link.transfer(mock.address, paymentAmount)
 
         // await assertActionThrows(async () => {

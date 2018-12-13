@@ -270,7 +270,7 @@ contract('Coordinator', () => {
 
       beforeEach(async () => {
         mock = await deploy('examples/MaliciousRequester.sol', link.address, coordinator.address)
-        await link.transfer(mock.address, paymentAmount)
+        await link.transfer(mock.address, paymentAmount.toString())
       })
 
       xit('cannot cancel before the expiration', async () => {

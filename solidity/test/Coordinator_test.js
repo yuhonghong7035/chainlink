@@ -191,7 +191,7 @@ contract('Coordinator', () => {
     context('when called through the LINK token with not enough payment', () => {
       it('throws an error', async () => {
         const calldata = executeServiceAgreementBytes(agreement.id, to, fHash, '1', '')
-        const underPaid = bigNum(agreement.payment).sub(1)
+        const underPaid = bigNum(agreement.payment).sub(bigNum(1))
 
         await assertActionThrows(async () => {
           await link.transferAndCall(coordinator.address, underPaid.toString(),
@@ -290,7 +290,7 @@ contract('Coordinator', () => {
 
       beforeEach(async () => {
         mock = await deploy('examples/MaliciousServiceAgreementConsumer.sol', link.address, coordinator.address)
-        await link.transfer(mock.address, paymentAmount)
+        await link.transfer(mock.address, paymentAmount.toString())
       })
 
       context('fails during fulfillment', () => {
@@ -340,7 +340,7 @@ contract('Coordinator', () => {
       })
 
       context('request is canceled during fulfillment', () => {
-        beforeEach(async () => {
+        beforeEach(async function requestCancellationSetup() {
           const req = await mock.requestData('cancelRequestOnFulfill(bytes32,bytes32)')
           internalId = runRequestId(req.receipt.logs[3])
 
@@ -376,7 +376,8 @@ contract('Coordinator', () => {
           const req = await mock.requestData('assertFail(bytes32,bytes32)')
           const log = req.receipt.logs[3]
 
-          assert.equal(web3.toWei(1), web3.toDecimal(log.topics[3]))
+          assert(web3.utils.toWei(bigNum(1)).eq(bigNum(log.topics[3])),
+                "Oracle did not use the amount of LINK actually paid")
         })
       })
     })

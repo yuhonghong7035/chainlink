@@ -65,6 +65,15 @@ export const toHexWithoutPrefix = arg => {
   }
 }
 
+export const accessSolidityContractTransferMethod =
+  async (contract, address, amount) => {
+    // Use overloaded-method syntax, because "transfer" is built-in to web3
+    // https://github.com/trufflesuite/truffle/releases/tag/v5.0.0-beta.0#overloaded-solidity-methods
+    // https://gitter.im/ConsenSys/truffle?at=5c11db2480986419d581e4da
+    method = contract.contract.methods['transfer(address,uint256)']
+    return await method(address, amount)
+}
+
 export const toHex = value => {
   return `0x${toHexWithoutPrefix(value)}`
 }

@@ -1,5 +1,6 @@
 import {
   abiEncode,
+  accessSolidityContractTransferMethod,
   assertActionThrows,
   bigNum,
   consumer,

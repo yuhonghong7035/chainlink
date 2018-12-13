@@ -180,8 +180,10 @@ contract('Coordinator', () => {
         assert.equal(eventSignature, log.topics[0])
 
         assert.equal(agreement.id, log.topics[1])
-        assert.equal(consumer, web3.toDecimal(log.topics[2]))
-        assert.equal(agreement.payment, web3.toDecimal(log.topics[3]))
+        assert(bigNum(consumer).eq(bigNum(log.topics[2])),
+              "Logged consumer address doesn't match")
+        assert(bigNum(agreement.payment).eq(bigNum(log.topics[3])),
+              "Logged payment amount doesn't match")
       })
     })
 

@@ -11,7 +11,8 @@ contract('Oracle', () => {
   beforeEach(async () => {
     link = await h.deploy('link_token/contracts/LinkToken.sol')
     oc = await h.deploy(sourcePath, link.address)
-    await oc.setFulfillmentPermission(h.oracleNode, true, { from: h.defaultAccount })
+    await oc.setFulfillmentPermission(
+      h.oracleNode, true, { from: h.defaultAccount })
   })
 
   it('has a limited public interface', () => {
@@ -73,14 +74,14 @@ contract('Oracle', () => {
       it('triggers the intended method', async () => {
         let callData = h.requestDataBytes(specId, to, fHash, 'id', '')
 
-        let tx = await link.transferAndCall(oc.address, 0, callData)
+        let tx = await h.transferLINKAndCall(link, oc.address, 0, callData)
         assert.equal(3, tx.receipt.logs.length)
       })
 
       context('with no data', () => {
         it('reverts', async () => {
           await h.assertActionThrows(async () => {
-            await link.transferAndCall(oc.address, 0, '')
+            await h.transferLINKAndCall(link, oc.address, 0, '')
           })
         })
       })
@@ -88,11 +89,11 @@ contract('Oracle', () => {
 
     context('malicious requester', () => {
       let mock, requester
-      const paymentAmount = web3.toWei('1', 'ether')
+      const paymentAmount = web3.utils.toWei('1', 'ether')
 
       beforeEach(async () => {
         mock = await h.deploy('examples/MaliciousRequester.sol', link.address, oc.address)
-        await link.transfer(mock.address, paymentAmount)
+        await h.transferLINK(link, mock.address, paymentAmount)
       })
 
       it('cannot withdraw from oracle', async () => {
@@ -123,7 +124,7 @@ contract('Oracle', () => {
 
         it('the target requester can still create valid requests', async () => {
           requester = await h.deploy('examples/BasicConsumer.sol', link.address, oc.address, h.toHex(specId))
-          await link.transfer(requester.address, paymentAmount)
+          await h.transferLINK(link, requester.address, paymentAmount)
           await mock.maliciousTargetConsumer(requester.address)
           await requester.requestEthereumPrice('USD')
         })
@@ -142,7 +143,7 @@ contract('Oracle', () => {
       const maliciousPayload = ottSelector + header + requestPayload.slice(2)
 
       await h.assertActionThrows(async () => {
-        await link.transferAndCall(oc.address, 0, maliciousPayload)
+        await h.transferLINKAndCall(link, oc.address, 0, maliciousPayload)
       })
     })
   })
@@ -163,9 +164,10 @@ contract('Oracle', () => {
       it('logs an event', async () => {
         assert.equal(oc.address, log.address)
 
-        assert.equal(specId, web3.toUtf8(log.topics[1]))
-        assert.equal(h.defaultAccount, web3.toDecimal(log.topics[2]))
-        assert.equal(paid, web3.toDecimal(log.topics[3]))
+        assert.equal(specId, web3.utils.toUtf8(log.topics[1]))
+        assert.equal(h.defaultAccount.toString().toLowerCase(),
+                     '0x' + h.bigNum(log.topics[2]).toString('hex'))
+        assert(h.bigNum(paid).eq(h.bigNum(log.topics[3])))
       })
 
       it('uses the expected event signature', async () => {
@@ -204,13 +206,13 @@ contract('Oracle', () => {
 
   describe('#fulfillData', () => {
     let mock, requestId
-    const paymentAmount = web3.toWei(1)
+    const paymentAmount = web3.utils.toWei("1")
     let currency = 'USD'
 
     context('cooperative consumer', () => {
       beforeEach(async () => {
         mock = await h.deploy('examples/BasicConsumer.sol', link.address, oc.address, specId)
-        await link.transfer(mock.address, web3.toWei('1', 'ether'))
+        await h.transferLINK(link, mock.address, web3.utils.toWei('1', 'ether'))
         await mock.requestEthereumPrice(currency)
         let event = await h.getLatestEvent(oc)
         requestId = event.args.requestId
@@ -237,7 +239,7 @@ contract('Oracle', () => {
           await oc.fulfillData(requestId, 'Hello World!', { from: h.oracleNode })
 
           let currentValue = await mock.currentPrice.call()
-          assert.equal('Hello World!', web3.toUtf8(currentValue))
+          assert.equal('Hello World!', web3.utils.toUtf8(currentValue))
         })
 
         it('does not allow a request to be fulfilled twice', async () => {
@@ -254,7 +256,7 @@ contract('Oracle', () => {
         const defaultGasLimit = 500000
 
         beforeEach(async () => {
-          assertBigNum(h.bigNum(0), await oc.withdrawable.call())
+          assert(h.bigNum(0).eq(h.bigNum(await oc.withdrawable.call())))
         })
 
         it('does not allow the oracle to withdraw the payment', async () => {
@@ -265,28 +267,29 @@ contract('Oracle', () => {
             })
           })
 
-          assertBigNum(h.bigNum(0), await oc.withdrawable.call())
+          assert(h.bigNum(0).eq(h.bigNum(await oc.withdrawable.call())))
         })
 
         it(`${defaultGasLimit} is enough to pass the gas requirement`, async () => {
-          assertBigNum(h.bigNum(0), await oc.withdrawable.call())
+          assert(h.bigNum(0).eq(h.bigNum(await oc.withdrawable.call())))
 
           await oc.fulfillData(requestId, 'Hello World!', {
             from: h.oracleNode,
             gas: defaultGasLimit
           })
 
-          assertBigNum(h.bigNum(paymentAmount), await oc.withdrawable.call())
+          assert(h.bigNum(paymentAmount).eq(
+            h.bigNum(await oc.withdrawable.call())))
         })
       })
     })
 
     context('with a malicious requester', () => {
-      const paymentAmount = h.toWei(1)
+      const paymentAmount = h.toWei("1")
 
       beforeEach(async () => {
         mock = await h.deploy('examples/MaliciousRequester.sol', link.address, oc.address)
-        await link.transfer(mock.address, paymentAmount)
+        await h.transferLINK(link, mock.address, paymentAmount)
       })
 
       it('cannot cancel before the expiration', async () => {
@@ -306,17 +309,18 @@ contract('Oracle', () => {
           const req = await mock.maliciousPrice(specId)
           const log = req.receipt.logs[3]
 
-          assert.equal(web3.toWei(1), web3.toDecimal(log.topics[3]))
+          assert(
+            web3.utils.toWei(h.bigNum(1)).eq(h.bigNum(log.topics[3])))
         })
       })
     })
 
     context('with a malicious consumer', () => {
-      const paymentAmount = h.toWei(1)
+      const paymentAmount = h.toWei("1")
 
       beforeEach(async () => {
         mock = await h.deploy('examples/MaliciousConsumer.sol', link.address, oc.address)
-        await link.transfer(mock.address, paymentAmount)
+        await h.transferLINK(link, mock.address, paymentAmount)
       })
 
       context('fails during fulfillment', () => {
@@ -332,9 +336,10 @@ contract('Oracle', () => {
           const balance = await link.balanceOf.call(h.oracleNode)
           assert.isTrue(balance.equals(0))
 
-          await oc.withdraw(h.oracleNode, paymentAmount, { from: h.defaultAccount })
+          await oc.withdraw(h.oracleNode, paymentAmount.toString(),
+                            { from: h.defaultAccount })
           const newBalance = await link.balanceOf.call(h.oracleNode)
-          assert.isTrue(paymentAmount.equals(newBalance))
+          assert(h.bigNum(paymentAmount).eq(h.bigNum(newBalance)))
         })
 
         it("can't fulfill the data again", async () => {
@@ -359,9 +364,10 @@ contract('Oracle', () => {
           const balance = await link.balanceOf.call(h.oracleNode)
           assert.isTrue(balance.equals(0))
 
-          await oc.withdraw(h.oracleNode, paymentAmount, { from: h.defaultAccount })
+          await oc.withdraw(h.oracleNode, paymentAmount.toString(),
+                            { from: h.defaultAccount })
           const newBalance = await link.balanceOf.call(h.oracleNode)
-          assert.isTrue(paymentAmount.equals(newBalance))
+          assert.isTrue(h.bigNum(paymentAmount).eq(h.bigNum(newBalance)))
         })
       })
 
@@ -384,9 +390,10 @@ contract('Oracle', () => {
           const balance = await link.balanceOf.call(h.oracleNode)
           assert.isTrue(balance.equals(0))
 
-          await oc.withdraw(h.oracleNode, paymentAmount, { from: h.defaultAccount })
+          await oc.withdraw(h.oracleNode, paymentAmount.toString(),
+                            { from: h.defaultAccount })
           const newBalance = await link.balanceOf.call(h.oracleNode)
-          assert.isTrue(paymentAmount.equals(newBalance))
+          assert(h.bigNum(paymentAmount).eq(h.bigNum(newBalance)))
         })
 
         it("can't fulfill the data again", async () => {
@@ -404,7 +411,8 @@ contract('Oracle', () => {
           requestId = events[0].args.requestId
 
           await oc.fulfillData(requestId, 'hack the planet 101', { from: h.oracleNode })
-          const mockBalance = web3.fromWei(web3.eth.getBalance(mock.address))
+          const mockBalance = await web3.utils.fromWei(
+            (await web3.eth.getBalance(mock.address)).toString())
           assert.equal(mockBalance, 0)
         })
 
@@ -414,7 +422,8 @@ contract('Oracle', () => {
           requestId = events[0].args.requestId
 
           await oc.fulfillData(requestId, 'hack the planet 101', { from: h.oracleNode })
-          const mockBalance = web3.fromWei(web3.eth.getBalance(mock.address))
+          const mockBalance = await web3.utils.fromWei(
+            (await web3.eth.getBalance(mock.address)).toString())
           assert.equal(mockBalance, 0)
         })
 
@@ -424,7 +433,8 @@ contract('Oracle', () => {
           requestId = events[0].args.requestId
 
           await oc.fulfillData(requestId, 'hack the planet 101', { from: h.oracleNode })
-          const mockBalance = web3.fromWei(web3.eth.getBalance(mock.address))
+          const mockBalance = await web3.utils.fromWei(
+            (await web3.eth.getBalance(mock.address)).toString())
           assert.equal(mockBalance, 0)
         })
       })
@@ -437,7 +447,7 @@ contract('Oracle', () => {
         let balance = await link.balanceOf(h.oracleNode)
         assert.equal(0, balance)
         await h.assertActionThrows(async () => {
-          await oc.withdraw(h.oracleNode, h.toWei(1), { from: h.defaultAccount })
+          await oc.withdraw(h.oracleNode, h.toWei("1").toString(), { from: h.defaultAccount })
         })
         balance = await link.balanceOf(h.oracleNode)
         assert.equal(0, balance)
@@ -519,7 +529,7 @@ contract('Oracle', () => {
     let internalId, amount
 
     beforeEach(async () => {
-      amount = web3.toWei('1', 'ether')
+      amount = web3.utils.toWei('1', 'ether')
       const mock = await h.deploy('examples/GetterSetter.sol')
       const args = h.requestDataBytes(specId, mock.address, fHash, 'id', '')
       const tx = await h.requestDataFrom(oc, link, amount, args)
@@ -530,7 +540,8 @@ contract('Oracle', () => {
 
     it('returns the correct value', async () => {
       const withdrawAmount = await oc.withdrawable.call()
-      assert.equal(withdrawAmount.toNumber(), amount)
+      assert(withdrawAmount.toString(), amount,
+            "Oracle reports the wrong withdrawable amount")
     })
   })
 
@@ -552,10 +563,11 @@ contract('Oracle', () => {
         requestAmount = 20
 
         mock = await h.deploy('examples/GetterSetter.sol')
-        await link.transfer(h.consumer, startingBalance)
+        await h.transferLINK(link, h.consumer, startingBalance)
 
         let args = h.requestDataBytes(specId, h.consumer, fHash, 1, '')
-        tx = await link.transferAndCall(oc.address, requestAmount, args, { from: h.consumer })
+        tx = await h.transferLINKAndCall(link, oc.address, requestAmount, args,
+                                       { from: h.consumer })
         assert.equal(3, tx.receipt.logs.length)
         requestId = h.runRequestId(tx.receipt.logs[2])
       })

@@ -158,12 +158,12 @@ contract('Coordinator', () => {
 
     beforeEach(async () => {
       await initiateServiceAgreement(coordinator, agreement)
-      await link.transfer(consumer, toWei(1000))
+      await link.transfer(consumer, toWei(1000).toString())
     })
 
     context('when called through the LINK token with enough payment', () => {      
       let payload, tx
-      beforeEach(async () => {
+      beforeEach(async function setupServiceAgreement() {
         const payload = executeServiceAgreementBytes(
           agreement.id, to, fHash, '1', '')
         tx = await link.transferAndCall(coordinator.address, agreement.payment,
@@ -179,9 +179,12 @@ contract('Coordinator', () => {
         let eventSignature = '0x6d6db1f8fe19d95b1d0fa6a4bce7bb24fbf84597b35a33ff95521fac453c1529'
         assert.equal(eventSignature, log.topics[0])
 
-        assert.equal(agreement.id, log.topics[1])
-        assert.equal(consumer, web3.toDecimal(log.topics[2]))
-        assert.equal(agreement.payment, web3.toDecimal(log.topics[3]))
+        assert.equal(agreement.id, log.topics[1],
+                     "Logged ServiceAgreement ID doesn't match")
+        assert(bigNum(consumer).eq(bigNum(log.topics[2])),
+              "Logged consumer contract address doesn't match")
+        assert(bigNum(agreement.payment).eq(bigNum(log.topics[3])),
+              "Logged payment amount amount doesn't match")
       })
     })
 
@@ -191,9 +194,8 @@ contract('Coordinator', () => {
         const underPaid = bigNum(agreement.payment).sub(1)
 
         await assertActionThrows(async () => {
-          await link.transferAndCall(coordinator.address, underPaid, calldata, {
-            from: consumer
-          })
+          await link.transferAndCall(coordinator.address, underPaid.toString(),
+                                     calldata, { from: consumer })
         })
       })
     })
@@ -261,14 +263,12 @@ contract('Coordinator', () => {
     })
 
     context('with a malicious requester', () => {
-      const paymentAmount = toWei(1)
+      const paymentAmount = toWei(1).toString()
 
-      it.only('cannot cancel before the expiration', async () => {
+      it('cannot cancel before the expiration', async () => {
         mock = await deploy(
           'examples/MaliciousRequester.sol', link.address, coordinator.address)
-        console.log('link', typeof link.contract, 'paymentAmount', paymentAmount, 'address', typeof mock.address)
-
-        await link.transfer(mock.address, 1)
+        await link.transfer(mock.address, paymentAmount)
         await assertActionThrows(async () => {
           await mock.maliciousRequestCancel()
         })

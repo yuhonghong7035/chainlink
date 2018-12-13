@@ -215,13 +215,6 @@ contract('Coordinator', () => {
       agreement = await newServiceAgreement({oracles: [oracleNode]})
       const tx = await initiateServiceAgreement(coordinator, agreement)
       assert.equal(tx.logs[0].args.said, agreement.id)
-
-      mock = await deploy('examples/GetterSetter.sol')
-      const fHash = functionSelector('requestedBytes32(bytes32,bytes32)')
-
-      const tx = await initiateServiceAgreement(coordinator, agreement)
-      requestId = runRequestId(tx.receipt.logs[2])
-      assert.equal(tx.logs[0].args.said, agreement.id)
     })
 
     context('cooperative consumer', () => {
@@ -230,19 +223,22 @@ contract('Coordinator', () => {
         const fHash = functionSelector('requestedBytes32(bytes32,bytes32)')
     
         const payload = executeServiceAgreementBytes(agreement.id, mock.address, fHash, 1, '')
-        const tx = await link.transferAndCall(coordinator.address, agreement.payment, payload)
+        const tx = await transferLINKAndCall(
+          link, coordinator.address, agreement.payment, payload)
         requestId = runRequestId(tx.receipt.logs[2])
       })
       context('when called by a non-owner', () => {
+        // Turn this test on when multiple-oracle response aggregation is enabled
         xit('raises an error', async () => {
           await assertActionThrows(async () => {
-            await coordinator.fulfillData(requestId, 'Hello World!', { from: stranger })
+            await coordinator.fulfillData(
+              requestId, 'Hello World!', { from: stranger })
           })
         })
       })
 
       context('when called by an owner', () => {
-        it.skip('raises an error if the request ID does not exist', async () => {
+        it('raises an error if the request ID does not exist', async () => {
           await assertActionThrows(async () => {
             await coordinator.fulfillData(
               0xdeadbeef, 'Hello World!', { from: oracleNode })
@@ -250,10 +246,11 @@ contract('Coordinator', () => {
         })
 
         it('sets the value on the requested contract', async () => {
-          await coordinator.fulfillData(requestId, 'Hello World!', { from: oracleNode })
+          await coordinator.fulfillData(
+            requestId, 'Hello World!', { from: oracleNode })
 
           const mockRequestId = await mock.requestId.call()
-          assert.equal(requestId, web3.utils.toUtf8(mockRequestId))
+          assert.equal(requestId, mockRequestId)
 
           const currentValue = await mock.getBytes32.call()
           assert.equal('Hello World!', web3.utils.toUtf8(currentValue))
@@ -273,12 +270,13 @@ contract('Coordinator', () => {
 
       beforeEach(async () => {
         mock = await deploy('examples/MaliciousRequester.sol', link.address, coordinator.address)
-        await link.transfer(mock.address, paymentAmount.toString())
+        await transferLINK(link, mock.address, paymentAmount.toString())
       })
 
       xit('cannot cancel before the expiration', async () => {
         await assertActionThrows(async () => {
-          await mock.maliciousRequestCancel(agreement.id, 'doesNothing(bytes32,bytes32)')
+          await mock.maliciousRequestCancel(
+            agreement.id, 'doesNothing(bytes32,bytes32)')
         })
       })
 
@@ -293,7 +291,7 @@ contract('Coordinator', () => {
           const req = await mock.maliciousPrice(agreement.id)
           const log = req.receipt.logs[3]
 
-          assert.equal(web3.toWei(1), web3.toDecimal(log.topics[3]))
+          assert(toWei(1).eq(bigNum(log.topics[3])))
         })
       })
     })
@@ -303,7 +301,7 @@ contract('Coordinator', () => {
 
       beforeEach(async () => {
         mock = await deploy('examples/MaliciousConsumer.sol', link.address, coordinator.address)
-        await link.transfer(mock.address, paymentAmount)
+        await transferLINK(link, mock.address, paymentAmount)
       })
 
       context('fails during fulfillment', () => {

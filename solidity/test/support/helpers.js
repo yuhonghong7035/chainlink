@@ -65,18 +65,23 @@ export const toHexWithoutPrefix = arg => {
   }
 }
 
-export const accessSolidityContractTransferMethod =
-  async (contract, address, amount) => {
-    // Use overloaded-method syntax, because "transfer" is built-in to web3
-    // https://github.com/trufflesuite/truffle/releases/tag/v5.0.0-beta.0#overloaded-solidity-methods
-    // https://gitter.im/ConsenSys/truffle?at=5c11db2480986419d581e4da
-    method = contract.contract.methods['transfer(address,uint256)']
-    return await method(address, amount)
-}
-
 export const toHex = value => {
   return `0x${toHexWithoutPrefix(value)}`
 }
+
+// Convert amount to string, because truffle contracts don't know how to deal
+// with BN's. Should probably remove this, if the issue gets fixed upstream.
+// https://github.com/trufflesuite/truffle/issues/1540
+export const transferLINK =
+  async (contract, address, amount) => await contract.transfer(
+    address, amount.toString())
+
+// Convert amount to string, because truffle contracts don't know how to deal
+// with BN's. Should probably remove this, if the issue gets fixed upstream.
+// https://github.com/trufflesuite/truffle/issues/1540
+export const transferLINKAndCall =
+  async (contract, address, amount, calldata, options) =>
+  await contract.transferAndCall(address, amount.toString(), calldata, options)
 
 // True if h is a standard representation of a byte array, false otherwise
 export const isByteRepresentation = h => {

@@ -1,6 +1,5 @@
 import {
   abiEncode,
-  accessSolidityContractTransferMethod,
   assertActionThrows,
   bigNum,
   consumer,
@@ -30,7 +29,9 @@ import {
   stranger,
   strip0x,
   toHex,
-  toWei
+  toWei,
+  transferLINK,
+  transferLINKAndCall,
 } from './support/helpers'
 
 contract('Coordinator', () => {
@@ -156,16 +157,17 @@ contract('Coordinator', () => {
 
     beforeEach(async () => {
       await initiateServiceAgreement(coordinator, agreement)
-      await link.transfer(consumer, toWei(1000))
+      await transferLINK(link, consumer, toWei(1000))
     })
 
-    context('when called through the LINK token with enough payment', () => {      
+    context('when called through the LINK token with enough payment', () => {
       let payload, tx
       beforeEach(async () => {
         const payload = executeServiceAgreementBytes(
           agreement.id, to, fHash, '1', '')
-        tx = await link.transferAndCall(coordinator.address, agreement.payment,
-                                        payload, { from: consumer })
+        tx = await transferLINKAndCall(
+          link, coordinator.address, agreement.payment,
+          payload, { from: consumer })
       })
 
       it('logs an event', async () => {
@@ -186,12 +188,11 @@ contract('Coordinator', () => {
     context('when called through the LINK token with not enough payment', () => {
       it('throws an error', async () => {
         const calldata = executeServiceAgreementBytes(agreement.id, to, fHash, '1', '')
-        const underPaid = bigNum(agreement.payment).sub(1)
+        const underPaid = bigNum(agreement.payment).sub(bigNum(1)).toString()
 
         await assertActionThrows(async () => {
-          await link.transferAndCall(coordinator.address, underPaid, calldata, {
-            from: consumer
-          })
+          await transferLINKAndCall(
+            link, coordinator.address, underPaid, calldata, { from: consumer })
         })
       })
     })

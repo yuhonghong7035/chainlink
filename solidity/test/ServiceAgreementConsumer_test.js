@@ -15,11 +15,11 @@ import {
 
 contract('ServiceAgreementConsumer', () => {
   const sourcePath = 'examples/ServiceAgreementConsumer.sol'
-  const agreement = newServiceAgreement()
   const currency = 'USD'
-  let link, coord, cc
+  let link, coord, cc, agreement
 
   beforeEach(async () => {
+    agreement = newServiceAgreement()
     link = await deploy('LinkToken.sol')
     coord = await deploy('Coordinator.sol', link.address)
     cc = await deploy(sourcePath, link.address, coord.address, agreement.id)

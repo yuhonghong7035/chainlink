@@ -46,7 +46,7 @@ contract('BasicConsumer', () => {
 
     context('with LINK', () => {
       beforeEach(async () => {
-        await link.transfer(cc.address, web3.toWei('1', 'ether'))
+        await link.transfer(cc.address, web3.utils.toWei('1', 'ether'))
       })
 
       it('triggers a log event in the Oracle contract', async () => {
@@ -62,7 +62,7 @@ contract('BasicConsumer', () => {
         }
 
         assert.equal(toHex(specId), jId)
-        assert.equal(web3.toWei('1', 'ether'), hexToInt(wei))
+        assert.equal(web3.utils.toWei('1', 'ether'), hexToInt(wei))
         assert.equal(cc.address.slice(2), requester.slice(26))
         assert.equal(1, ver)
         assert.deepEqual(expected, params)
@@ -80,7 +80,7 @@ contract('BasicConsumer', () => {
     let requestId
 
     beforeEach(async () => {
-      await link.transfer(cc.address, web3.toWei('1', 'ether'))
+      await link.transfer(cc.address, web3.utils.toWei('1', 'ether'))
       await cc.requestEthereumPrice(currency)
       let event = await getLatestEvent(oc)
       requestId = event.args.requestId
@@ -136,7 +136,7 @@ contract('BasicConsumer', () => {
     let requestId
 
     beforeEach(async () => {
-      await link.transfer(cc.address, web3.toWei('1', 'ether'))
+      await link.transfer(cc.address, web3.utils.toWei('1', 'ether'))
       await cc.requestEthereumPrice(currency)
       let event = await getLatestEvent(oc)
       requestId = event.args.requestId
@@ -160,9 +160,9 @@ contract('BasicConsumer', () => {
 
   describe('#withdrawLink', () => {
     beforeEach(async () => {
-      await link.transfer(cc.address, web3.toWei('1', 'ether'))
+      await link.transfer(cc.address, web3.utils.toWei('1', 'ether'))
       const balance = await link.balanceOf(cc.address);
-      assert.equal(balance.toString(), web3.toWei('1', 'ether'));
+      assert.equal(balance.toString(), web3.utils.toWei('1', 'ether'));
     })
 
     it('transfers LINK out of the contract', async () => {
@@ -170,7 +170,7 @@ contract('BasicConsumer', () => {
       const ccBalance = await link.balanceOf(cc.address);
       const consumerBalance = await link.balanceOf(consumer);
       assert.equal(ccBalance.toString(), '0');
-      assert.equal(consumerBalance.toString(), web3.toWei('1', 'ether'));
+      assert.equal(consumerBalance.toString(), web3.utils.toWei('1', 'ether'));
     })
   })
 })

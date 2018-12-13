@@ -22,7 +22,7 @@ contract('UpdatableConsumer', () => {
   const tokenSubnode = namehash.hash(`${tokenSubdomain}.${domain}.${tld}`)
   const oracleSubdomain = 'oracle'
   const oracleSubnode = namehash.hash(`${oracleSubdomain}.${domain}.${tld}`)
-  const specId = web3.sha3('someSpecID')
+  const specId = web3.utils.sha3('someSpecID')
   const newOracleAddress = '0xf000000000000000000000000000000000000ba7'
 
   let ens, ensResolver, link, oc, uc
@@ -35,12 +35,12 @@ contract('UpdatableConsumer', () => {
     ensResolver = await deploy('PublicResolver.sol', ens.address)
 
     // register tld
-    await ens.setSubnodeOwner(ensRoot, web3.sha3(tld), defaultAccount)
+    await ens.setSubnodeOwner(ensRoot, web3.utils.sha3(tld), defaultAccount)
     // register domain
-    await ens.setSubnodeOwner(tldSubnode, web3.sha3(domain), oracleNode)
+    await ens.setSubnodeOwner(tldSubnode, web3.utils.sha3(domain), oracleNode)
     await ens.setResolver(domainSubnode, ensResolver.address, {from: oracleNode})
     // register token subdomain to point to token contract
-    await ens.setSubnodeOwner(domainSubnode, web3.sha3(tokenSubdomain), oracleNode, {from: oracleNode})
+    await ens.setSubnodeOwner(domainSubnode, web3.utils.sha3(tokenSubdomain), oracleNode, {from: oracleNode})
     await ensResolver.setAddr(tokenSubnode, link.address, {from: oracleNode})
     // register oracle subdomain to point to oracle contract
     await ens.setSubnodeOwner(domainSubnode, web3.sha3(oracleSubdomain), oracleNode, {from: oracleNode})

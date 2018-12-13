@@ -266,14 +266,12 @@ contract('Coordinator', () => {
       it.only('cannot cancel before the expiration', async () => {
         mock = await deploy(
           'examples/MaliciousRequester.sol', link.address, coordinator.address)
-        console.log('link', link.contract, 'paymentAmount', paymentAmount, 'address', mock.address)
-        // await accessSolidityContractTransferMethod(
-        //   link, mock.address, paymentAmount)
-        await link.transfer(mock.address, paymentAmount)
+        console.log('link', typeof link.contract, 'paymentAmount', paymentAmount, 'address', typeof mock.address)
 
-        // await assertActionThrows(async () => {
-        //   await mock.maliciousRequestCancel()
-        // })
+        await link.transfer(mock.address, 1)
+        await assertActionThrows(async () => {
+          await mock.maliciousRequestCancel()
+        })
       })
 
       it('cannot call functions on the LINK token through callbacks', async () => {

@@ -1,6 +1,17 @@
+import {resolve, join } from 'path'
 import { assertBigNum } from './matchers'
 
-process.env.SOLIDITY_INCLUDE = '../../solidity/contracts/:../../solidity/contracts/examples/:../../solidity/contracts/interfaces/:../../contracts/:../../node_modules/:../../node_modules/link_token/contracts:../../node_modules/openzeppelin-solidity/contracts/ownership/:../../node_modules/@ensdomains/ens/contracts/'
+const contractPathHead = resolve(__dirname + '/../..')
+
+process.env.SOLIDITY_INCLUDE = [
+  'contracts/',
+  'contracts/examples/',
+  'contracts/interfaces/',
+  'node_modules/',
+  'node_modules/link_token/contracts',
+  'node_modules/openzeppelin-solidity/contracts/ownership/',
+  'node_modules/@ensdomains/ens/contracts/',
+].map(p => join(contractPathHead, p)).join(':')
 
 const PRIVATE_KEY = 'c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3'
 

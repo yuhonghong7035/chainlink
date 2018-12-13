@@ -41,7 +41,7 @@ contract('ServiceAgreementConsumer', () => {
 
     context('with LINK', () => {
       beforeEach(async () => {
-        await link.transfer(cc.address, web3.toWei('1', 'ether'))
+        await link.transfer(cc.address, web3.utils.toWei('1', 'ether'))
       })
 
       it('triggers a log event in the Coordinator contract', async () => {
@@ -57,7 +57,7 @@ contract('ServiceAgreementConsumer', () => {
         }
 
         assert.equal(agreement.id, jId)
-        assert.equal(web3.toWei('1', 'ether'), hexToInt(wei))
+        assert.equal(web3.utils.toWei('1', 'ether'), hexToInt(wei))
         assert.equal(cc.address.slice(2), requester.slice(26))
         assert.equal(1, ver)
         assert.deepEqual(expected, params)
@@ -75,7 +75,7 @@ contract('ServiceAgreementConsumer', () => {
     let requestId
 
     beforeEach(async () => {
-      await link.transfer(cc.address, web3.toWei('1', 'ether'))
+      await link.transfer(cc.address, web3.utils.toWei('1', 'ether'))
       await cc.requestEthereumPrice(currency)
       let event = await getLatestEvent(coord)
       requestId = event.args.requestId

@@ -4,6 +4,7 @@ import {
   bigNum,
   consumer,
   checkPublicABI,
+  calculateSAID,
   checkServiceAgreementPresent,
   checkServiceAgreementAbsent,
   deploy,
@@ -36,8 +37,11 @@ contract('Coordinator', () => {
   let coordinator, link
 
   beforeEach(async () => {
+    console.log('deploying link token')
     link = await deploy('link_token/contracts/LinkToken.sol')
+    console.log('deploying coordinator')
     coordinator = await deploy(sourcePath, link.address)
+    console.log('deployments complete')
   })
 
   it('has a limited public interface', () => {
@@ -116,11 +120,10 @@ contract('Coordinator', () => {
     context('with an invalid oracle signatures', () => {
       let badOracleSignature, badRequestDigestAddr
       before(async () => {
-        badOracleSignature = personalSign(newAddress(stranger), agreement.id)
-        badRequestDigestAddr = recoverPersonalSignature(agreement.id,
-                                                        badOracleSignature)
-        assert.notEqual(toHex(newAddress(oracleNode)),
-                        toHex(badRequestDigestAddr))
+        const sAID = calculateSAID(agreement)
+        badOracleSignature = await personalSign(stranger, sAID)
+        badRequestDigestAddr = recoverPersonalSignature(sAID, badOracleSignature)
+        assert.equal(stranger.toLowerCase(), toHex(badRequestDigestAddr))
       })
 
       it('saves no service agreement struct, if signatures invalid', async () => {
@@ -246,10 +249,10 @@ contract('Coordinator', () => {
           await coordinator.fulfillData(requestId, 'Hello World!', { from: oracleNode })
 
           const mockRequestId = await mock.requestId.call()
-          assert.equal(requestId, mockRequestId)
+          assert.equal(requestId, web3.utils.toUtf8(mockRequestId))
 
           const currentValue = await mock.getBytes32.call()
-          assert.equal('Hello World!', web3.toUtf8(currentValue))
+          assert.equal('Hello World!', web3.utils.toUtf8(currentValue))
         })
 
         it('does not allow a request to be fulfilled twice', async () => {

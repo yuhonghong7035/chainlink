@@ -5,7 +5,8 @@ import {
   getLatestEvent,
   increaseTime5Minutes,
   oracleNode,
-  toWei
+  toWei,
+  transferLINK,
 } from './support/helpers'
 import { assertBigNum } from './support/matchers'
 import namehash from 'eth-ens-namehash'
@@ -88,7 +89,7 @@ contract('UpdatableConsumer', () => {
     let internalId, requestId
 
     beforeEach(async () => {
-      await link.transfer(uc.address, web3.toWei('1', 'ether'))
+      await transferLINK(link, uc.address, web3.utils.toWei('1', 'ether'))
       await uc.requestEthereumPrice(currency)
       const event = await getLatestEvent(oc)
       internalId = event.args.requestId

@@ -89,7 +89,8 @@ export const isByteRepresentation = h => {
   return (h instanceof Buffer || h instanceof BN || h instanceof Uint8Array )
 }
 
-export const deploy = (filePath, ...args) => deployer.perform(filePath, ...args)
+export const deploy = async (filePath, ...args) =>
+  await deployer.perform(filePath, ...args)
 
 export const getEvents = contract => (
   new Promise(

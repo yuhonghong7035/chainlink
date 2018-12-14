@@ -48,16 +48,16 @@ module.exports = function Deployer (wallet, utils) {
       const compiled = compile(filename)
       const encodedArgs = encodeArgs(contractArgs, compiled.abi)
 
-      const txHash = await wallet.send({
+      const contractCreationResponse = await wallet.send({
         gas: 2500000,
         gasPrice: 10000000000,
         from: wallet.address,
-        nonce: await wallet.nextNonce(),
         data: `0x${getBytecode(compiled)}${encodedArgs}`
       })
-      const receipt = await utils.getTxReceipt(txHash)
+      const receipt = await utils.getTxReceipt(
+        contractCreationResponse.transactionHash)
       const contract = await contractify(compiled.abi, receipt.contractAddress)
-      contract.transactionHash = txHash
+      contract.transactionHash = contractCreationResponse.transactionHash
       return contract
     },
     load: async (filename, address) => {

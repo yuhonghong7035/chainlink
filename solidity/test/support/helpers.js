@@ -30,6 +30,7 @@ const HEX_BASE = 16
 // https://github.com/ethereum/web3.js/issues/1119#issuecomment-394217563
 web3.providers.HttpProvider.prototype.sendAsync =
   web3.providers.HttpProvider.prototype.send
+console.log('provider************************************************************************', web3.currentProvider)
 export const eth = web3.eth;
 
 const INVALIDVALUE = {
@@ -50,7 +51,7 @@ export const utils = Utils(web3.currentProvider)
 export const wallet = Wallet(PRIVATE_KEY, utils)
 export const deployer = Deployer(wallet, utils)
 
-export const bigNum = number => web3.utils.toBN(number)
+export const bigNum = web3.utils.toBN
 
 export const toWei = number => bigNum(web3.utils.toWei(bigNum(number)))
 

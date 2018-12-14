@@ -10,7 +10,13 @@ module.exports = function Wallet (key, utils) {
   const wallet = EthWallet.fromPrivateKey(privateKey)
   const address = `0x${wallet.getAddress().toString('hex')}`
   const eth = utils.eth
-  const nextNonce = async () => await eth.getTransactionCount(address, 'pending')
+  const nextNonce = async () => {
+		const time = new Date()
+    console.log('getting nonce')
+  	const nonce = await web3.eth.getTransactionCount(address, 'pending')
+    console.log('got nonce', nonce)
+		return nonce
+  }
 
   return {
     address: address,
@@ -18,20 +24,14 @@ module.exports = function Wallet (key, utils) {
     send: async (params) => await nonceLock.acquire(
       `Transaction lock for ${address}`,
       async () => {
-        const lockID = Math.random()
-        console.log('entering lock for', address, 'lock ID', lockID, Date.now())
         const defaults = {
           nonce: await nextNonce(),
           chainId: 0
         }
-        console.log('default nonce', defaults.nonce, 'lock ID', lockID, Date.now())
         let tx = new Tx(Object.assign(defaults, params))
-        console.log('tx nonce', tx.nonce, 'lock ID', lockID, Date.now())
         tx.sign(privateKey)
-        let txHex = tx.serialize().toString('hex')
-        console.log('sending tx', 'lock ID', lockID, Date.now())
-        result = await eth.sendRawTransaction(txHex)
-        console.log('done sending tx for lock id ${lockID}', Date.now())
+        let txHex = '0x' + tx.serialize().toString('hex')
+        const result = await web3.eth.sendSignedTransaction(txHex)
         return result
       }),
     call: async (params) => {

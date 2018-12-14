@@ -11,7 +11,8 @@ import {
   increaseTime5Minutes
 } from './support/helpers'
 
-contract('ConcreteChainlinked', () => {
+contract('ConcreteChainlinked', async () => {
+
   const sourcePath = 'examples/ConcreteChainlinked.sol'
   let specId = '4c7b7ffb66b344fbaa64995af81e355a'
   let cc, gs, oc, newoc, link

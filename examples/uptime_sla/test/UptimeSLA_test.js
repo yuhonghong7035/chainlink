@@ -53,7 +53,7 @@ contract('UptimeSLA', () => {
       assert.equal(1, events.length)
 
       const event = events[0]
-      assert.equal(web3.toUtf8(event.args.specId), specId)
+      assert.equal(web3.utils.toUtf8(event.args.specId), specId)
 
       const decoded = cbor.decodeFirstSync(util.toBuffer(event.args.data))
       assert.deepEqual(

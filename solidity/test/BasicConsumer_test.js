@@ -90,7 +90,7 @@ contract('BasicConsumer', () => {
       await oc.fulfillData(requestId, response, {from: oracleNode})
 
       let currentPrice = await cc.currentPrice.call()
-      assert.equal(web3.toUtf8(currentPrice), response)
+      assert.equal(web3.utils.toUtf8(currentPrice), response)
     })
 
     it('logs the data given to it by the oracle', async () => {
@@ -98,7 +98,7 @@ contract('BasicConsumer', () => {
       assert.equal(2, tx.receipt.logs.length)
       let log = tx.receipt.logs[1]
 
-      assert.equal(web3.toUtf8(log.topics[2]), response)
+      assert.equal(web3.utils.toUtf8(log.topics[2]), response)
     })
 
     context('when the consumer does not recognize the request ID', () => {
@@ -116,7 +116,7 @@ contract('BasicConsumer', () => {
         await oc.fulfillData(otherId, response, {from: oracleNode})
 
         let received = await cc.currentPrice.call()
-        assert.equal(web3.toUtf8(received), '')
+        assert.equal(web3.utils.toUtf8(received), '')
       })
     })
 
@@ -127,7 +127,7 @@ contract('BasicConsumer', () => {
         })
 
         let received = await cc.currentPrice.call()
-        assert.equal(web3.toUtf8(received), '')
+        assert.equal(web3.utils.toUtf8(received), '')
       })
     })
   })

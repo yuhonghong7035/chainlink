@@ -102,7 +102,7 @@ contract('UpdatableConsumer', () => {
       await oc.fulfillData(internalId, response, {from: oracleNode})
 
       const currentPrice = await uc.currentPrice.call()
-      assert.equal(web3.toUtf8(currentPrice), response)
+      assert.equal(web3.utils.toUtf8(currentPrice), response)
     })
 
     context('when the oracle address is updated before a request is fulfilled', () => {
@@ -116,7 +116,7 @@ contract('UpdatableConsumer', () => {
         await oc.fulfillData(internalId, response, {from: oracleNode})
 
         const currentPrice = await uc.currentPrice.call()
-        assert.equal(web3.toUtf8(currentPrice), response)
+        assert.equal(web3.utils.toUtf8(currentPrice), response)
       })
 
       it('does not accept responses from the new oracle for the old requests', async () => {
@@ -125,7 +125,7 @@ contract('UpdatableConsumer', () => {
         })
 
         const currentPrice = await uc.currentPrice.call()
-        assert.equal(web3.toUtf8(currentPrice), '')
+        assert.equal(web3.utils.toUtf8(currentPrice), '')
       })
 
       it('still allows funds to be withdrawn from the oracle', async () => {

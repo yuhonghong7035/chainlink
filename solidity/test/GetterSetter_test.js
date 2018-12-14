@@ -16,7 +16,7 @@ contract('GetterSetter', () => {
       await gs.setBytes32(bytes32, {from: stranger})
 
       let currentBytes32 = await gs.getBytes32.call()
-      assert.equal(web3.toUtf8(currentBytes32), bytes32)
+      assert.equal(web3.utils.toUtf8(currentBytes32), bytes32)
     })
 
     it('logs an event', async () => {
@@ -24,7 +24,7 @@ contract('GetterSetter', () => {
 
       assert.equal(1, tx.logs.length)
       assert.equal(stranger, tx.logs[0].args.from)
-      assert.equal(bytes32, web3.toUtf8(tx.logs[0].args.value))
+      assert.equal(bytes32, web3.utils.toUtf8(tx.logs[0].args.value))
     })
   })
 
@@ -36,7 +36,7 @@ contract('GetterSetter', () => {
       assert.equal(currentRequestId, requestId)
 
       let currentBytes32 = await gs.getBytes32.call()
-      assert.equal(web3.toUtf8(currentBytes32), bytes32)
+      assert.equal(web3.utils.toUtf8(currentBytes32), bytes32)
     })
   })
 

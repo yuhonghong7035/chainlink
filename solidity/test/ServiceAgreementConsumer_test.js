@@ -85,7 +85,7 @@ contract('ServiceAgreementConsumer', () => {
       await coord.fulfillData(requestId, response, { from: oracleNode })
 
       let currentPrice = await cc.currentPrice.call()
-      assert.equal(web3.toUtf8(currentPrice), response)
+      assert.equal(web3.utils.toUtf8(currentPrice), response)
     })
 
     context('when the consumer does not recognize the request ID', () => {
@@ -103,7 +103,7 @@ contract('ServiceAgreementConsumer', () => {
         await coord.fulfillData(otherId, response, { from: oracleNode })
 
         let received = await cc.currentPrice.call()
-        assert.equal(web3.toUtf8(received), '')
+        assert.equal(web3.utils.toUtf8(received), '')
       })
     })
 
@@ -113,7 +113,7 @@ contract('ServiceAgreementConsumer', () => {
           await cc.fulfill(requestId, response, { from: oracleNode })
         })
         let received = await cc.currentPrice.call()
-        assert.equal(web3.toUtf8(received), '')
+        assert.equal(web3.utils.toUtf8(received), '')
       })
     })
   })

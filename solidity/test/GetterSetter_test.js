@@ -23,7 +23,7 @@ contract('GetterSetter', () => {
       let tx = await gs.setBytes32(bytes32, {from: stranger})
 
       assert.equal(1, tx.logs.length)
-      assert.equal(stranger, tx.logs[0].args.from)
+      assert.equal(stranger.toLowerCase(), tx.logs[0].args.from)
       assert.equal(bytes32, web3.utils.toUtf8(tx.logs[0].args.value))
     })
   })

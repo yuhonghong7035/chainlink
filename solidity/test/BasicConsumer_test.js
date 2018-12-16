@@ -63,7 +63,7 @@ contract('BasicConsumer', () => {
         }
 
         assert.equal(toHex(specId), jId)
-        assert(web3.utils.toWei('1', 'ether').eq(bigNum(wei)))
+        assert(web3.utils.toWei(bigNum('1'), 'ether').eq(bigNum(wei)))
         assert.equal(cc.address.slice(2), requester.slice(26))
         assert.equal(1, ver)
         assert.deepEqual(expected, params)

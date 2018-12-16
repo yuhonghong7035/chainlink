@@ -1,5 +1,6 @@
 import {
   assertActionThrows,
+  bigNum,
   defaultAccount,
   deploy,
   getLatestEvent,
@@ -131,11 +132,11 @@ contract('UpdatableConsumer', () => {
 
       it('still allows funds to be withdrawn from the oracle', async () => {
         await increaseTime5Minutes()
-        assertBigNum(toWei(0), await link.balanceOf.call(uc.address))
+        assert(toWei(0).eq(bigNum(await link.balanceOf.call(uc.address))))
 
         await uc.cancelRequest(requestId)
 
-        assertBigNum(toWei(1), await link.balanceOf.call(uc.address))
+        assert(toWei(1).eq(bigNum(await link.balanceOf.call(uc.address))))
       })
     })
   })

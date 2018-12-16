@@ -54,7 +54,7 @@ export const bigNum = number => web3.utils.toBN(number)
 
 export const toWei = number => bigNum(web3.utils.toWei(bigNum(number)))
 
-export const hexToInt = string => web3.toBigNumber(string)
+export const hexToInt = string => bigNum(string).toNumber()
 
 export const toHexWithoutPrefix = arg => {
   if (arg instanceof Buffer || arg instanceof BN) {

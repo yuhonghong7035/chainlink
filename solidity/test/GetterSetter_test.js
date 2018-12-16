@@ -1,4 +1,4 @@
-import { deploy, stranger } from './support/helpers'
+import { bigNum, deploy, stranger } from './support/helpers'
 
 contract('GetterSetter', () => {
   const sourcePath = 'examples/GetterSetter.sol'
@@ -52,8 +52,8 @@ contract('GetterSetter', () => {
       let tx = await gs.setUint256(uint256, {from: stranger})
 
       assert.equal(1, tx.logs.length)
-      assert.equal(stranger, tx.logs[0].args.from)
-      assert.equal(uint256, web3.toBigNumber(tx.logs[0].args.value))
+      assert.equal(stranger.toLowerCase(), tx.logs[0].args.from)
+      assert(bigNum(uint256).eq(bigNum(tx.logs[0].args.value)))
     })
   })
 

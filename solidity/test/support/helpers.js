@@ -262,8 +262,12 @@ export const increaseTime5Minutes = async () => {
     method: 'evm_increaseTime',
     params: [300],
     id: 0
-  }, (error, result) => console.log(
-    'increaseTime5Minutes', 'error', error, 'result', result))
+  }, (error, result) => {
+    if (error) {
+      console.log(`Error during helpers.increaseTime5Minutes! ${error}`)
+      throw error
+    }
+  })
 }
 
 export const calculateSAID =

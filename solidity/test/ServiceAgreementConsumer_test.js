@@ -20,7 +20,7 @@ contract('ServiceAgreementConsumer', () => {
   let link, coord, cc, agreement
 
   beforeEach(async () => {
-    agreement = newServiceAgreement()
+    agreement = await newServiceAgreement()
     link = await deploy('LinkToken.sol')
     coord = await deploy('Coordinator.sol', link.address)
     cc = await deploy(sourcePath, link.address, coord.address, agreement.id)

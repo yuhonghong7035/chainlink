@@ -44,7 +44,8 @@ contract('UpdatableConsumer', () => {
     await ens.setSubnodeOwner(domainSubnode, web3.utils.sha3(tokenSubdomain), oracleNode, {from: oracleNode})
     await ensResolver.setAddr(tokenSubnode, link.address, {from: oracleNode})
     // register oracle subdomain to point to oracle contract
-    await ens.setSubnodeOwner(domainSubnode, web3.sha3(oracleSubdomain), oracleNode, {from: oracleNode})
+    await ens.setSubnodeOwner(domainSubnode, web3.utils.sha3(oracleSubdomain),
+                              oracleNode, {from: oracleNode})
     await ensResolver.setAddr(oracleSubnode, oc.address, {from: oracleNode})
 
     // deploy updatable consumer contract

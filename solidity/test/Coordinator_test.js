@@ -206,7 +206,6 @@ contract('Coordinator', () => {
   })
 
   describe('#fulfillData', () => {
-    const externalId = '17'
     let agreement, mock, requestId
     beforeEach(async () => {
       agreement = await newServiceAgreement({oracles: [oracleNode]})
@@ -218,7 +217,7 @@ contract('Coordinator', () => {
       beforeEach(async () => {
         mock = await deploy('examples/GetterSetter.sol')
         const fHash = functionSelector('requestedBytes32(bytes32,bytes32)')
-    
+
         const payload = executeServiceAgreementBytes(agreement.id, mock.address, fHash, 1, '')
         const tx = await transferLINKAndCall(
           link, coordinator.address, agreement.payment, payload)

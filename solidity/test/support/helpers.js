@@ -265,7 +265,6 @@ export const recoverPersonalSignature = (message, signature) => {
     message
   )
   const digest = ethjsUtils.sha3(toBuffer(personalSignMessage))
-  console.log('signature', signature)
   const requestDigestPubKey = ethjsUtils.ecrecover(digest,
     signature.v,
     toBuffer(signature.r),
@@ -373,12 +372,9 @@ export const newServiceAgreement = async (params) => {
 
   const oracle = newAddress(agreement.oracles[0])
   const oracleSignature = await personalSign(oracle, sAID)
-  console.log('oracleSignature', oracleSignature)
   const requestDigestAddr = recoverPersonalSignature(sAID, oracleSignature)
   assert.equal(toHex(oracle), toHex(requestDigestAddr))
   agreement.oracleSignature = oracleSignature
-
-  console.log('extiing newServiceAgreement')
   return agreement
 }
 

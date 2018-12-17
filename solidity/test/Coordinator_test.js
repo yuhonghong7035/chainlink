@@ -36,8 +36,11 @@ contract('Coordinator', () => {
   let coordinator, link
 
   beforeEach(async () => {
+    console.log('deploying link token')
     link = await deploy('link_token/contracts/LinkToken.sol')
+    console.log('deploying coordinator')
     coordinator = await deploy(sourcePath, link.address)
+    console.log('deployments complete')
   })
 
   it('has a limited public interface', () => {

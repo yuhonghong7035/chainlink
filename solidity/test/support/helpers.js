@@ -69,6 +69,11 @@ export const toHex = value => {
   return `0x${toHexWithoutPrefix(value)}`
 }
 
+// True if h is a standard representation of a byte array, false otherwise
+export const isByteRepresentation = h => {
+  return (h instanceof Buffer || h instanceof BN || h instanceof Uint8Array )
+}
+
 export const deploy = (filePath, ...args) => deployer.perform(filePath, ...args)
 
 export const getEvents = contract => (
@@ -270,10 +275,10 @@ export const recoverPersonalSignature = (message, signature) => {
 }
 
 export const personalSign = async (account, message) => {
-  console.log('message', message)
-  console.log('account', account)
-  return newSignature(await web3.eth.sign(web3.utils.utf8ToHex(message),
-                                          account))
+  if (!isByteRepresentation(message)) {
+    throw new Error(`Message ${message} is not a recognized representation of a byte array. (Can be Buffer, BigNumber, Uint8Array, 0x-prepended hexadecimal string.)`)
+  }
+  return newSignature(await web3.eth.sign(toHex(message), account))
 }
 
 export const executeServiceAgreementBytes = (sAID, to, fHash, nonce, data) => {

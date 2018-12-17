@@ -4,6 +4,7 @@ import {
   bigNum,
   consumer,
   checkPublicABI,
+  calculateSAID,
   checkServiceAgreementPresent,
   checkServiceAgreementAbsent,
   deploy,
@@ -119,11 +120,10 @@ contract('Coordinator', () => {
     context('with an invalid oracle signatures', () => {
       let badOracleSignature, badRequestDigestAddr
       before(async () => {
-        badOracleSignature = personalSign(newAddress(stranger), agreement.id)
-        badRequestDigestAddr = recoverPersonalSignature(agreement.id,
-                                                        badOracleSignature)
-        assert.notEqual(toHex(newAddress(oracleNode)),
-                        toHex(badRequestDigestAddr))
+        const sAID = calculateSAID(agreement)
+        badOracleSignature = await personalSign(stranger, sAID)
+        badRequestDigestAddr = recoverPersonalSignature(sAID, badOracleSignature)
+        assert.equal(stranger.toLowerCase(), toHex(badRequestDigestAddr))
       })
 
       it('saves no service agreement struct, if signatures invalid', async () => {

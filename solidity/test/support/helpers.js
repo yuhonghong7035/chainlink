@@ -370,10 +370,10 @@ export const newServiceAgreement = async (params) => {
   const sAID = calculateSAID(agreement)
   agreement.id = toHex(sAID)
 
-  const oracle = newAddress(agreement.oracles[0])
+  const oracle = agreement.oracles[0]
   const oracleSignature = await personalSign(oracle, sAID)
   const requestDigestAddr = recoverPersonalSignature(sAID, oracleSignature)
-  assert.equal(toHex(oracle), toHex(requestDigestAddr))
+  assert.equal(oracle.toLowerCase(), toHex(requestDigestAddr))
   agreement.oracleSignature = oracleSignature
   return agreement
 }

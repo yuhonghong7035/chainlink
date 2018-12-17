@@ -111,7 +111,7 @@ export const assertActionThrows = action => (
       assert(errorMessage, 'Expected an error to be raised')
       const invalidOpcode = errorMessage.includes('invalid opcode')
       const reverted = errorMessage.includes('VM Exception while processing transaction: revert')
-      assert.isTrue(invalidOpcode || reverted, 'expected error message to include "invalid JUMP" or "revert"')
+      assert.isTrue(invalidOpcode || reverted, `expected following error message to include "invalid JUMP" or "revert": "${errorMessage}"`)
       // see https://github.com/ethereumjs/testrpc/issues/39
       // for why the "invalid JUMP" is the throw related error when using TestRPC
     })

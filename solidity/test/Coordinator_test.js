@@ -249,10 +249,10 @@ contract('Coordinator', () => {
           await coordinator.fulfillData(requestId, 'Hello World!', { from: oracleNode })
 
           const mockRequestId = await mock.requestId.call()
-          assert.equal(requestId, mockRequestId)
+          assert.equal(requestId, web3.utils.toUtf8(mockRequestId))
 
           const currentValue = await mock.getBytes32.call()
-          assert.equal('Hello World!', web3.toUtf8(currentValue))
+          assert.equal('Hello World!', web3.utils.toUtf8(currentValue))
         })
 
         it('does not allow a request to be fulfilled twice', async () => {
